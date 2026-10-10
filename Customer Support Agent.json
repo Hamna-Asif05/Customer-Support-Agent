@@ -1,0 +1,395 @@
+{
+  "name": "Customer Support Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -672,
+        -112
+      ],
+      "id": "2721a360-6387-4db3-97c1-e3f193dfb1e7",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9SpOFj1Y8IDXqMJ9",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "HamnaAsif Customer Supports",
+              "description": "Emails related to general inquiries, customer support questions, frequently asked questions (FAQs), company services or automation queries."
+            },
+            {
+              "category": "Others",
+              "description": "Any other emails, spam, newsletters or messages that do not belong to customer support or general inquiries."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -448,
+        -112
+      ],
+      "id": "de8cbf39-3f8d-4736-abc7-50bcfb4b7f53",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        192
+      ],
+      "id": "846c8dd7-4965-4b29-ae88-43df6bc3c318",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        160
+      ],
+      "id": "1c49a55e-94e9-4946-bbbb-f43b1fb32839",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Gmail Trigger').item.json.text }}",
+        "options": {
+          "systemMessage": "# Overview\nYou are a customer support agent from HamnaAsif Automations. Your job is to write responses to incoming emails using your knowledgeBase tool.\n\n## Output\nOnly output the email body\n\n## Instructions\n- Write friendly emails with emojis\n- Sign off as Hamna from HamnaAsif Automations.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        -128
+      ],
+      "id": "8b9b4219-c081-4623-9271-45378c3c72fc",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        64
+      ],
+      "id": "c533041a-3424-4452-b535-1bc7897187e4",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to search and retrieve relevant company information, knowledge base articles and FAQs to answer customer inquiries.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "gmail",
+          "mode": "list",
+          "cachedResultName": "gmail"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        176,
+        96
+      ],
+      "id": "971c44ae-1050-4bc4-85d9-cde04bbe8df9",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "oj9izFQCVITv0J9Z",
+          "name": "Pinecone account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        272
+      ],
+      "id": "4c4a359b-f00a-400b-9325-d40eb1f33fed",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        -128
+      ],
+      "id": "2ab5f700-94c6-484c-9bd3-2de9398a4807",
+      "name": "Reply to a message",
+      "webhookId": "91153946-d6b7-48da-ace0-de491f781c00",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9SpOFj1Y8IDXqMJ9",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Customer  Support  Agent",
+        "height": 80,
+        "width": 150,
+        "color": "#C7F4DD"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -224
+      ],
+      "id": "5e21dee9-50cb-4e4b-99a4-4bd89374f1e8",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "1a12455318c375eb",
+          "threadId": "1a12455318c375eb",
+          "labelIds": [
+            "UNREAD",
+            "IMPORTANT",
+            "CATEGORY_PERSONAL",
+            "INBOX"
+          ],
+          "sizeEstimate": 7391,
+          "headers": {
+            "delivered-to": "Delivered-To: hamnaasif623@gmail.com",
+            "received": "Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])\r\n        by mx.google.com with SMTPS id 586e51a60fabf-4a2a88f97d4sor2579582fac.6.2026.10.09.22.42.05\r\n        for <hamnaasif623@gmail.com>\r\n        (Google Transport Security);\r\n        Fri, 09 Oct 2026 22:42:05 -0700 (PDT)",
+            "x-received": "X-Received: by 2002:a05:6870:7085:b0:4a2:4864:4ead with SMTP id\r\n 586e51a60fabf-4a2a48e161cmr3119768fac.15.1791610925054; Fri, 09 Oct 2026\r\n 22:42:05 -0700 (PDT)",
+            "arc-seal": "ARC-Seal: i=1; a=rsa-sha256; t=1791610925; cv=none;\r\n        d=google.com; s=arc-20260327;\r\n        b=QABxE1Jd+6Fy1adzw9xmSLXGwEltUuy4gadyLeBqT7LrPy9bpAtLCTuuVuAJz93VNs\r\n         nJmzFlB/gC7ImIZx/WvA9kbMNAIjaCiStxpQbFgUVqxOn6mI/JPxAOKNivXBbT/zjw0W\r\n         EWKR7e+ESGLdVSBDH5wxNnkq9aQktc2MQmnAFHAGlGRm5BmEpxmJV3i1Qo4iUPFO2eBg\r\n         NbTidh0wPdM5ZIO/U+pE+0K0i71ZybELd1CAniBwsjvvpkqc64PaUylPhtDBh4T4p60G\r\n         KrY72NIk3VyU3mV0TwbRgatO4t+QZvRnpm2iUKFeiVdgpshBK8eMPdBaqNUk6eHfMtB5\r\n         lBcA==",
+            "arc-message-signature": "ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;\r\n        h=to:subject:message-id:date:from:mime-version:dkim-signature;\r\n        bh=U1STwL/9dN5P8PjdinUL86onBBbIV4byp8lI0+mK9Yw=;\r\n        fh=4QQbPxse+qQVaUBa7sYHX8GYF/80A1d2wv48/YU+1hU=;\r\n        b=DjNm7pbDUwmT/kJKrpM9BwqHGORozHvqP/2j9X1kWAqts8N2411+O8aSFbXeZbqT65\r\n         WSqYO6t3ClDmUlp3NlF5mYOuWf7SS/TQyhjj7wuyc+kHtWd8RH2Ai7/YTuQOCqO5Tbir\r\n         QPesY4P6m7AX6Pxlfwptl45f6Zv6Kil5hfoUIm/MpazDdaEUybCoxgmXfpsKH9XObf+t\r\n         OuW/BznGdCBpLXutyDP/UxWqCEpEcrfEWa5zM6B2kKl75GFQFCt5eRjozUptW+MQ89DE\r\n         KYe0sT/rzbD/qQsAaq1VsUHAQixRJo7GfpXv9xlX6r1GiOxQeS2p4sWdriHaaZT7GyNg\r\n         Q76g==;\r\n        dara=google.com",
+            "arc-authentication-results": "ARC-Authentication-Results: i=1; mx.google.com; arc=none",
+            "return-path": "Return-Path: <asifmahmoodsso957@gmail.com>",
+            "received-spf": "Received-SPF: pass (google.com: domain of asifmahmoodsso957@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;",
+            "authentication-results": "Authentication-Results: mx.google.com;\r\n       dkim=pass header.i=@gmail.com header.s=20251104 header.b=Cfcb5OjU;\r\n       arc=pass (i=1);\r\n       spf=pass (google.com: domain of asifmahmoodsso957@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=asifmahmoodsso957@gmail.com;\r\n       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;\r\n       dara=pass header.i=@gmail.com",
+            "dkim-signature": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=gmail.com; s=20251104; t=1791610925; x=1792215725; dara=google.com;\r\n        h=content-type:to:subject:message-id:date:from:mime-version:from:to\r\n         :cc:subject:date:message-id:reply-to:content-type;\r\n        bh=U1STwL/9dN5P8PjdinUL86onBBbIV4byp8lI0+mK9Yw=;\r\n        b=Cfcb5OjUbwFDjS/sEFrk81Ouzp6Pxbi3cvrOXG73SB6BrAa589gnxwndf04oCkJ3GF\r\n         XaAhPAPwWIyFfwJGgOXyw09jKegOkAJuHmPZ8VJBwKPvvnVJCW7Dcn2J6gQuI+ZN6ktz\r\n         DcddMsJ58gdzZEf/Kfp5lrU8/QtLq3CDYoLLam+COYZxPAB3L/vCenXaBJNPv+YVunkv\r\n         q0lfWmFnpbTFo5tkndNg/epxWLnk7FaW9Ch4aLaGV7rTKJwVPKgLQx4WjrxiHWkmvyV9\r\n         ULl3qPPO/1HqWiQPEQ+Jw2p6/ihTcbrKZzmWyr0THlsIRSRna6MRqPAMG2vybMmvV5BM\r\n         7tqg==",
+            "x-google-dkim-signature": "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20260707; t=1791610925; x=1792215725;\r\n        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg\r\n         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to\r\n         :content-type;\r\n        bh=U1STwL/9dN5P8PjdinUL86onBBbIV4byp8lI0+mK9Yw=;\r\n        b=f/LijyawcF83s77CrnQsWVTBRsJYdcT+yzg5YgynsIuLcE17UoTKL1dj2t+8KUHm0c\r\n         5rxTFxoGhJxbSh8YtnrhXDO0wR4NByf/YqsCiPycTeYDD/wptUM5L5A70VqYgmjbikFQ\r\n         sU8qG9XdlFvurW09WYhm9k0fL6QA9O0LxmGzTyJhL5dP9sCgLqKob3TMLV7fiYzzGddP\r\n         dUoN5tFcMfvCojAfgl3rpk/8+FwriU2jb/sf/IqT4X+0IStvtC3AbIsSJjyqDR7wwtN6\r\n         7wVp2iIiAbxBi4sqKmht5xJFXK4Daod/gx6nwRLGXuNKhvzKybNO7BpfgCy300Yq65cu\r\n         reZg==",
+            "x-gm-message-state": "X-Gm-Message-State: AFq9FYIwGZmg4EAYZSFzzHh1Xly+SRc7hjTIfG96mWIzNw6vDrqqwqex\r\n\tifROChnlZR81MZNBCFJJe1LFGps+RG/kafWb5Nfw/vcIYXWsFDCMKuL44av4UDz82gFUtZAnaqy\r\n\taY8wEuJ6Xzs6G6pB2BM410SPzxTAX+Coyyw==",
+            "x-gm-gg": "X-Gm-Gg: AYBFou3/8e5/7s4b9g7e3XuEsGzfs297OUWe6s0k6iQtvOFqYZ82xX6je9H4pWeAEEY\r\n\tQUE1DfuG50FgGF18y0Ow4S1zSuXjA268DicPlN85JURqLH3W5Oox0S9ijOai7roVig6iwZ4HJJv\r\n\t3uWfSPFcz8BOru/zygf524ezjNK1CeCWzV9/B+ts3Fu9Eubno6+vtkKEusWaDVmPhyZ23oOmpU+\r\n\tSvf/4IuoUVjuTP21pGo3RA6AROX+tKcg3/ZH1Rq1RJaCGRYMp9RgnHLpfXx8Z84X9s+kOrQaJwi\r\n\ttwnQj8Mo5shqgf9vnCaQDG49a6MnNrBJwBo0lK84AbA54c2y3n7Uz3OJBKPo0QBokPTyVeCQIMO\r\n\tUZ7yeLBkBQn9MxA==",
+            "mime-version": "MIME-Version: 1.0",
+            "from": "From: Hamna Asif <asifmahmoodsso957@gmail.com>",
+            "date": "Date: Sat, 10 Oct 2026 10:41:52 +0500",
+            "x-gm-features": "X-Gm-Features: AclHuK83uW_QQPX8lguyOFFlgYBFzzOT4uP_6hDObVD3OKosp3wAsRbdSHNsbas",
+            "message-id": "Message-ID: <CAMNwduNCb+us1OR01KyE9EaHQtXt96VbvCvEKCkPx2s+iEvgMA@mail.gmail.com>",
+            "subject": "Subject: ",
+            "to": "To: \"hamnaasif623@gmail.com\" <hamnaasif623@gmail.com>",
+            "content-type": "Content-Type: multipart/alternative; boundary=\"000000000000c37fb6065d75ecf0\""
+          },
+          "html": "<div dir=\"auto\">Hi i am interested in automations that company hamnasight provides. Can you please tell what servicesand automations your agency provide so that I can make my mind?</div>\n",
+          "text": "Hi i am interested in automations that company hamnasight provides. Can you\nplease tell what servicesand automations your agency provide so that I can\nmake my mind?\n",
+          "textAsHtml": "<p>Hi i am interested in automations that company hamnasight provides. Can you<br/>please tell what servicesand automations your agency provide so that I can<br/>make my mind?</p>",
+          "date": "2026-10-10T05:41:52.000Z",
+          "to": {
+            "value": [
+              {
+                "address": "hamnaasif623@gmail.com",
+                "name": ""
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><a href=\"mailto:hamnaasif623@gmail.com\" class=\"mp_address_email\">hamnaasif623@gmail.com</a></span>",
+            "text": "hamnaasif623@gmail.com"
+          },
+          "from": {
+            "value": [
+              {
+                "address": "asifmahmoodsso957@gmail.com",
+                "name": "Hamna Asif"
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Hamna Asif</span> &lt;<a href=\"mailto:asifmahmoodsso957@gmail.com\" class=\"mp_address_email\">asifmahmoodsso957@gmail.com</a>&gt;</span>",
+            "text": "\"Hamna Asif\" <asifmahmoodsso957@gmail.com>"
+          },
+          "messageId": "<CAMNwduNCb+us1OR01KyE9EaHQtXt96VbvCvEKCkPx2s+iEvgMA@mail.gmail.com>"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "992c1ecf-0fbd-4bc9-9f2b-d016dafdb0d9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2aa16f752107119e294cb6dfcea3b709b09b575fe79b8f0ae183d061ed016ca6"
+  },
+  "nodeGroups": [],
+  "id": "W6EnehgBXLrL3LvU",
+  "tags": []
+}
